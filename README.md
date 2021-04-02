@@ -1,5 +1,6 @@
+# 摄像机与激光雷达的外参标定
 # Extrinsic Calibration Between A Camera and A 3D Lidar
- 摄像机与激光雷达的外参标定  Extrinsic Calibration Between A Camera and A 3D Lidar
+
 
 
 1、坐标系 
@@ -18,5 +19,6 @@
 
 
 ##参考  reference
-    1、https://github.com/AbangLZU/multi_lidar_calibration
-    2、https://github.com/Aaron20127/Camera-lidar-joint-calibration/tree/master
+
+1、https://github.com/AbangLZU/multi_lidar_calibration
+2、https://github.com/Aaron20127/Camera-lidar-joint-calibration/tree/master
