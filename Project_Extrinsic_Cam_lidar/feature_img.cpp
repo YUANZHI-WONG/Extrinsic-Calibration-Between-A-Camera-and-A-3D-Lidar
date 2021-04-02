@@ -19,7 +19,7 @@ using namespace cv;
 double* converto_imgpts(double x, double y, double z, cv::Mat cameramat, cv::Mat distcoeff);
 void SplitString(const string& s, vector<string>& v, const string& c);
 
-int main()
+int main2()
 {
 	
 	Mat RVEC_img2grid3d, TVEC_img2grid3d;//ÏñËØ×ø±ê×ªÍ¼Ïñ×ø±ê
