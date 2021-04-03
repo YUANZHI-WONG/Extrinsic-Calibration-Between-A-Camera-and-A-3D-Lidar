@@ -42,7 +42,12 @@ int main()
 	//标定板尺寸
 	int CheckerboardSize[] = { 841, 594 };
 	int Checkerboard_offset[] = {0,0};
-	
+
+	//标定板四个角点的点云坐标。图像对应点顺序：  绿 黄 蓝 红
+	double temp_point[4][3] = { { -2.312, 0.304, 0.278 }, {-2.382, -0.025, 0.777 }, { -2.387, -0.800 , 0.267 }, { -2.317, -0.471, -0.233 } };
+
+	//点云数据文件
+	ifstream infile("C:\\Users\\xunger\\Desktop\\plane\\data\\pointcloud\\11.txt");
 
 	/////////////////////参数定义与赋值/////////////////////////////////////
 
@@ -98,8 +103,32 @@ int main()
 
 	bool patternfound;
 
+	//激光雷达与摄像机坐标之间的变换矩阵
+	Mat RVEC, TVEC;
+	//角点的激光点云坐标
+	cv::Point3f point;
+	for (int i = 0; i < 4; i++)
+	{
+		for (int j = 0; j < 3; j++)
+		{
+			//cameraMatrix.at<double>(i, j) = tempMatrix[i][j];
+			if (j == 0)
+			{
+				point.x = temp_point[i][j];
+			}
+			if (j == 1)
+			{
+				point.y = temp_point[i][j];
+			}
+			if (j == 2)
+			{
+				point.z = temp_point[i][j];
+			}
+		}
+		Lidar_Poinds.push_back(point);
 
-	
+	}
+
 	//////////////////////////////////////////////////////
 	patternfound = cv::findChessboardCorners(gray, patternNum, corners, CALIB_CB_ADAPTIVE_THRESH + CALIB_CB_NORMALIZE_IMAGE);
 
@@ -150,6 +179,9 @@ int main()
 		cv::Mat chessboard_normal = cv::Mat(1, 3, CV_64F);//标定板平面法向量
 		cv::Mat tmprmat = cv::Mat(3, 3, CV_64F); // 旋转矩阵  rotation matrix
 		cv::Rodrigues(RVEC_img2grid3d, tmprmat); //欧拉角旋转矩阵 Euler angles to rotation matrix
+		
+		
+		
 		for (int j = 0; j < 3; j++) {
 			for (int k = 0; k < 3; k++) {
 				chessboardpose.at<double>(j, k) = tmprmat.at<double>(j, k);
@@ -234,12 +266,77 @@ int main()
 		std::cout << "未找到内角点" << endl;
 	}
 
+
+
+	//求解像素平面坐标与激光雷达空间坐标的变换矩阵
+	cv::solvePnP(Lidar_Poinds, Camera_Pixs, cameraMatrix, distCoeff, RVEC, TVEC);
+	Rodrigues(RVEC, RVEC);
+
+
+	cout << "\nRVEC：  \n" << RVEC << endl;
+	cout << "\nTVEC：  \n" << TVEC << endl;
+
+
+
+	/////////////////////点云数据的投影///////////////////////////////
+
+	vector<Point3f> all_points;
+	string s;
+	vector<string> v;
+	vector<double> tmp;
+	vector<vector<double>> all_data;
+
+	std::vector<cv::Point2f> projectedPoints;
+
+
+
+	if (!infile.is_open())
+	{
+		cout << "fail to load pointcloud !" << endl;
+		return 0;
+	}
+
+	while (getline(infile, s))
+	{
+		//cout << s << endl;
+		SplitString(s, v, ","); //可按多个字符来分隔;
+		for (int i = 0; i < 3; i++)
+		{
+			tmp.push_back(atof(v[i].c_str()) * 1000);
+		}
+		all_data.push_back(tmp);
+		v.clear();
+		tmp.clear();
+	}
+
+	infile.close();             //关闭文件输入流 
+
+	cout << "Size of all_points"<<all_data.size() << endl;
+
+	for (int i = 0; i < all_data.size(); i++)
+	{
+		all_points.push_back(Point3f(all_data[i][0], all_data[i][1], all_data[i][2]));
+	}
+
+	cv::projectPoints(all_points, RVEC, TVEC, cameraMatrix, distCoeff, projectedPoints);
 	
+	
+
+	//绘制投影点
+	for (int i = 0; i < projectedPoints.size(); i++)
+	{
+		Point2f p = projectedPoints[i];
+		if (p.y <= 1080)
+		{
+			circle(image, p, 1, Scalar(255, 255, 0), 1, 8, 0);
+		}
+	}
+	namedWindow("opencv test", CV_WINDOW_AUTOSIZE);
+	imshow("opencv test", image);
+	waitKey(0);	
 
 	return 0;
 }
-
-
 
 
 // 在图像框架中，将3D点与相机框架转换为2D像素点。     Convert 3D points w.r.t camera frame to 2D pixel points in image frame    
