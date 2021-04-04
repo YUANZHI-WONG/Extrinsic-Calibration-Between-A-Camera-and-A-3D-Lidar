@@ -21,33 +21,38 @@ void SplitString(const string& s, vector<string>& v, const string& c);
 int main()
 {
 
-	////////////////////输入部分////////////////////////////////
-
 	//相机内参矩阵
-	float tempCameraMatrix[3][3] = { { 431.3602 ,0.000000, 326.6817 }, { 0.000000 ,431.3788, 234.3058 }, { 0.000000, 0.000000, 1.000000 } };
+	float tempCameraMatrix[3][3] = { { 5.537353828616555e+02 ,0.661061597452577, 3.769228320691506e+02 }, { 0.000000 ,5.557333343865605e+02, 2.347359649613280e+02 }, { 0.000000, 0.000000, 1.000000 } };
 	//畸变系数
-	double tempdDistCoeff[5] = { 0.046236, -0.066408, -0.001334, -0.005110, 0.000000 };
-	
-	Mat image = imread("C:\\Users\\xunger\\Desktop\\test\\image\\11.jpg");
-		if (image.empty())
-		{
-			cout << "fail to load image !" << endl;
-			return -1;
-		}
+	double tempdDistCoeff[5] = { -0.4174, 0.2815, 9.3721e-04, -7.9522e-04, 0.000000 };
+
+	Mat image = imread("C:\\Users\\xunger\\Desktop\\wanjiceshi\\11\\image.png ");
+	if (image.empty())
+	{
+		cout << "fail to load image !" << endl;
+		return -1;
+	}
 
 	//棋盘格模式
-	int verticiesNum[] = {8,6};
-	int square_length = 80; //小格子边长，单位：mm
+	int verticiesNum[] = { 8,6 };
+	int square_length = 110; //小格子边长，单位：mm
 
 	//标定板尺寸
-	int CheckerboardSize[] = { 841, 594 };
-	int Checkerboard_offset[] = {0,0};
+	int CheckerboardSize[] = { 1200, 900 };
+	int Checkerboard_offset[] = { 0,0 };
 
-	//标定板四个角点的点云坐标。图像对应点顺序：  绿 黄 蓝 红
-	double temp_point[4][3] = { { -2.312, 0.304, 0.278 }, {-2.382, -0.025, 0.777 }, { -2.387, -0.800 , 0.267 }, { -2.317, -0.471, -0.233 } };
+	//标定板四个角点的点云坐标。图像对应点顺序：  绿 黄 蓝 红 中心
+	double temp_point[5][3] = { {3.1534398877,2.539970788881,-1.919133511386 },
+								{3.709679921356,2.234830282805,-1.28448176041 },
+								{ 3.055170465598,2.832310730723,-0.423568910006 },
+								{2.498930431942,3.137451236799,-1.058220660982} ,
+								{  3.104, 2.686, -1.171} };
 
 	//点云数据文件
-	ifstream infile("C:\\Users\\xunger\\Desktop\\plane\\data\\pointcloud\\11.txt");
+	ifstream infile("C:\\Users\\xunger\\Desktop\\wanjiceshi\\11\\11_101.txt");
+
+	//点云txt文件分隔符
+	string split_sign = ",";
 
 	/////////////////////参数定义与赋值/////////////////////////////////////
 
@@ -64,9 +69,10 @@ int main()
 	for (int i = 0; i < 5; i++) {
 		distCoeff.at<double>(0, i) = tempdDistCoeff[i];
 	}
+
 	// 灰度图
 	Mat gray;
-	cv::cvtColor(image, gray, CV_RGB2GRAY);
+	
 
 	//像素平面坐标与相机空间坐标的变换矩阵。旋转矩阵、平移矩阵。
 	Mat RVEC_img2grid3d, TVEC_img2grid3d;
@@ -107,7 +113,7 @@ int main()
 	Mat RVEC, TVEC;
 	//角点的激光点云坐标
 	cv::Point3f point;
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < 5; i++)
 	{
 		for (int j = 0; j < 3; j++)
 		{
@@ -124,12 +130,50 @@ int main()
 			{
 				point.z = temp_point[i][j];
 			}
+			if (j == 4)
+			{
+				point.z = temp_point[i][j];
+			}
 		}
 		Lidar_Poinds.push_back(point);
 
 	}
 
-	//////////////////////////////////////////////////////
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	/*去畸变
+	//	去畸变图
+	Mat undistort_img;
+	
+	cv::Size img_size(i_params.image_size.first, i_params.image_size.second);
+
+
+	cv::Mat undistort_map1;
+	cv::Mat undistort_map2;
+
+
+	imgsize.height = image.rows;
+	imgsize.width = image.cols;
+
+	imgsize = image.size();
+
+	cv::initUndistortRectifyMap(cameraMatrix, distCoeff, cv::Mat(),
+		cv::getOptimalNewCameraMatrix(cameraMatrix, distCoeff, imgsize, 1, imgsize, 0),
+		imgsize, CV_16SC2, undistort_map1, undistort_map2);
+	cv::remap(image, undistort_img, undistort_map1, undistort_map2, cv::INTER_LINEAR);
+
+	namedWindow("opencv test1", CV_WINDOW_AUTOSIZE);
+	imshow("opencv test1", image);
+
+
+	namedWindow("opencv test undis", CV_WINDOW_AUTOSIZE);
+	imshow("opencv test1 undis", undistort_img);
+	waitKey(0);*/
+
+
+
+	cv::cvtColor(image, gray, CV_RGB2GRAY);
+
+
 	patternfound = cv::findChessboardCorners(gray, patternNum, corners, CALIB_CB_ADAPTIVE_THRESH + CALIB_CB_NORMALIZE_IMAGE);
 
 	if (patternfound) {
@@ -152,8 +196,6 @@ int main()
 		cv::drawChessboardCorners(image, patternNum, corners, patternfound);
 
 
-		imgsize.height = image.rows;
-		imgsize.width = image.cols;
 
 		// 板框原点位置为棋盘的左下内角  Location of board frame origin from the bottom left inner corner of the checkerboard
 		tx = (patternNum.height - 1) * patternSize.height / 2;
@@ -248,18 +290,14 @@ int main()
 			{
 				cv::circle(image, cv::Point(img_coord[0], img_coord[1]), 8, CV_RGB(255, 255, 255), -1); //white for centre
 				cout << " white  " << img_coord[0] << "       " << img_coord[1] << endl;
-
+				uv.x = img_coord[0];
+				uv.y = img_coord[1];
+				Camera_Pixs.push_back(uv);
 				//cout << " cam coordinates center:    " << corner_vectors.at<double>(0, k), corner_vectors.at<double>(1, k), corner_vectors.at<double>(2, k)
 			}
 
 			delete[] img_coord;
 		}
-
-		namedWindow("opencv test", CV_WINDOW_AUTOSIZE);
-		imshow("opencv test", image);
-		waitKey(0);
-
-
 	}
 	else
 	{
@@ -299,7 +337,7 @@ int main()
 	while (getline(infile, s))
 	{
 		//cout << s << endl;
-		SplitString(s, v, ","); //可按多个字符来分隔;
+		SplitString(s, v, split_sign); //可按多个字符来分隔;
 		for (int i = 0; i < 3; i++)
 		{
 			tmp.push_back(atof(v[i].c_str()) * 1000);
@@ -331,9 +369,11 @@ int main()
 			circle(image, p, 1, Scalar(255, 255, 0), 1, 8, 0);
 		}
 	}
+
+
 	namedWindow("opencv test", CV_WINDOW_AUTOSIZE);
 	imshow("opencv test", image);
-	waitKey(0);	
+	waitKey(0);
 
 	return 0;
 }
@@ -388,3 +428,5 @@ void SplitString(const string& s, vector<string>& v, const string& c)
 	if (pos1 != s.length())
 		v.push_back(s.substr(pos1));
 }
+
+
