@@ -1,25 +1,32 @@
-	//相机内参矩阵
+//相机内参矩阵
 	float tempCameraMatrix[3][3] = { { 5.537353828616555e+02 ,0.661061597452577, 3.769228320691506e+02 }, { 0.000000 ,5.557333343865605e+02, 2.347359649613280e+02 }, { 0.000000, 0.000000, 1.000000 } };
 	//畸变系数
 	double tempdDistCoeff[5] = { -0.4174, 0.2815, 9.3721e-04, -7.9522e-04, 0.000000 };
-	
-	Mat image = imread("C:Users\\xunger\\Desktop\\wanjiceshi\\11\\image.png ");
-		if (image.empty())
-		{
-			cout << "fail to load image !" << endl;
-			return -1;
-		}
+
+	Mat image = imread("C:\\Users\\xunger\\Desktop\\wanjiceshi\\11\\image.png ");
+	if (image.empty())
+	{
+		cout << "fail to load image !" << endl;
+		return -1;
+	}
 
 	//棋盘格模式
-	int verticiesNum[] = {8,6};
+	int verticiesNum[] = { 8,6 };
 	int square_length = 110; //小格子边长，单位：mm
 
 	//标定板尺寸
 	int CheckerboardSize[] = { 1200, 900 };
-	int Checkerboard_offset[] = {0,0};
+	int Checkerboard_offset[] = { 0,0 };
 
-	//标定板四个角点的点云坐标。图像对应点顺序：  绿 黄 蓝 红
-	double temp_point[4][3] = { {3.1534398877,2.539970788881,-1.919133511386 }, {3.709679921356,2.234830282805,-1.28448176041 }, { 3.055170465598,2.832310730723,-0.423568910006 }, {2.498930431942,3.137451236799,-1.058220660982} };
+	//标定板四个角点的点云坐标。图像对应点顺序：  绿 黄 蓝 红 中心
+	double temp_point[5][3] = { {3.1534398877,2.539970788881,-1.919133511386 },
+								{3.709679921356,2.234830282805,-1.28448176041 },
+								{ 3.055170465598,2.832310730723,-0.423568910006 },
+								{2.498930431942,3.137451236799,-1.058220660982} ,
+								{  3.104, 2.686, -1.171} };
 
 	//点云数据文件
 	ifstream infile("C:\\Users\\xunger\\Desktop\\wanjiceshi\\11\\11_101.txt");
+
+	//点云txt文件分隔符
+	string split_sign = ",";
